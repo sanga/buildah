@@ -5,6 +5,8 @@ env:
     ####
     #### Global variables used for all tasks
     ####
+    # Name of the ultimate destination branch for this CI run, PR or post-merge.
+    DEST_BRANCH: "master"
     GOPATH: "/var/tmp/go"
     GOSRC: "${GOPATH}/src/github.com/containers/buildah"
     # Overrides default location (/tmp/cirrus) for repo clone
@@ -60,6 +62,9 @@ gce_instance:
 # Update metadata on VM images referenced by this repository state
 meta_task:
 
+    # Required for Bors Github App. support
+    skip: $CIRRUS_BRANCH == "staging.tmp" || $CIRRUS_BRANCH == "trying.tmp"
+
     container:
         image: "quay.io/libpod/imgts:latest"  # see contrib/imgts
         cpu: 1
@@ -84,6 +89,9 @@ meta_task:
 
 gate_task:
 
+    # Required for Bors Github App. support
+    skip: $CIRRUS_BRANCH == "staging.tmp" || $CIRRUS_BRANCH == "trying.tmp"
+
     timeout_in: 20m
 
     setup_script: '${SCRIPT_BASE}/setup.sh |& ${_TIMESTAMP}'
@@ -101,6 +109,9 @@ gate_task:
 # that the vendor.conf, the code and the vendored packages in ./vendor are
 # in sync at all times.
 vendor_task:
+
+    # Required for Bors Github App. support
+    skip: $CIRRUS_BRANCH == "staging.tmp" || $CIRRUS_BRANCH == "trying.tmp"
 
     env:
         CIRRUS_WORKING_DIR: "/var/tmp/go/src/github.com/containers/buildah"
@@ -122,6 +133,9 @@ vendor_task:
 
 cross_task:
 
+    # Required for Bors Github App. support
+    skip: $CIRRUS_BRANCH == "staging.tmp" || $CIRRUS_BRANCH == "trying.tmp"
+
     depends_on:
         - gate
         - vendor
@@ -141,6 +155,9 @@ cross_task:
 
 
 testing_task:
+
+    # Required for Bors Github App. support
+    skip: $CIRRUS_BRANCH == "staging.tmp" || $CIRRUS_BRANCH == "trying.tmp"
 
     depends_on:
         - gate
@@ -173,6 +190,9 @@ testing_task:
 
 testing_in_podman_task:
 
+    # Required for Bors Github App. support
+    skip: $CIRRUS_BRANCH == "staging.tmp" || $CIRRUS_BRANCH == "trying.tmp"
+
     depends_on:
         - gate
         - vendor
@@ -194,3 +214,32 @@ testing_in_podman_task:
 
     always:
         <<: *standardlogs
+
+# Accumulator task used by the Bors github app to signal completion of
+# required.  Non-standard task name makes positive match easier -  See
+# '.bors.toml' file in repo. root.
+'cirrus-ci/success_task':
+
+    # Required for Bors Github App. support
+    skip: $CIRRUS_BRANCH == "staging.tmp" || $CIRRUS_BRANCH == "trying.tmp"
+
+    depends_on:
+        - 'meta'
+        - 'gate'
+        - 'vendor'
+        - 'cross'
+        # TODO: Still relying on travis, task is set to allow failures (see above)
+        # - 'testing'
+        - 'testing_in_podman'
+
+    container:
+        image: 'alpine'
+        cpu: 1
+        memory: 1
+
+    env:
+        CIRRUS_SHELL: '/bin/sh'  # No bash on alpine
+
+    # Special name, overrides git clone as source not needed for task
+    clone_script: '/bin/true'
+    success_script: '/bin/true'
