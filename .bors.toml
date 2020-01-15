@@ -1,0 +1,29 @@
+# Format Ref: https://bors.tech/documentation/#configuration-borstoml
+#
+# status & pr_status
+# ------------------
+# Selects which tests are required for merging, matching against values
+# from BOTH the older github 'status API' (ref: https://developer.github.com/v3/repos/statuses
+# /#list-statuses-for-a-specific-ref) AND newer 'checks API'. Ref: https://developer.github.com/v3/checks
+# /runs/#list-check-runs-in-a-check-suite both return JSON:
+#
+# Status API:  Matches against '[].context' values
+# Checks API:  Matches against 'check_runs[].name' values
+#
+# Note: The wild-card character '%' is available.
+status = [
+    "continuous-integration/travis-ci%",
+    "cirrus-ci/success"
+]
+
+# List of commit statuses that must pass on the PR commit
+pr_status = [
+    "continuous-integration/travis-ci%",
+    "cirrus-ci/success"
+]
+
+# Cirrus-CI Max Timeout is 60 * 60 * 2
+timeout_sec = 7200
+
+# List of strings: PR Labels that must NOT be present
+block_labels = []
